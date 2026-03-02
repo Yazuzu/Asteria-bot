@@ -1,0 +1,292 @@
+{
+    "nome": "Xenom Completo (Y2K + Coquette)",
+    "cargos": [
+        {
+            "nome": "🎀 ◟ Owner",
+            "cor": 16738740,
+            "separado": true,
+            "permissoes": [
+                "administrator"
+            ],
+            "position": 1
+        },
+        {
+            "nome": "✦ ◟ Staff",
+            "cor": 11403263,
+            "separado": true,
+            "permissoes": [
+                "manage_messages",
+                "kick_members",
+                "mute_members"
+            ],
+            "position": 2
+        },
+        {
+            "nome": "🌸 ◟ Member",
+            "cor": 16777215,
+            "separado": false,
+            "permissoes": [
+                "send_messages",
+                "read_messages",
+                "connect"
+            ],
+            "position": 3
+        }
+    ],
+    "categorias": [
+        {
+            "nome": "⎯⎯⎯⎯⎯⎯⎯⎯（ 💿 ◟ ）’ 𝐈𝐍𝐈𝐂𝐈𝐎　𝐄　𝐑𝐄𝐆𝐑𝐀𝐒",
+            "position": 0,
+            "overwrites": [],
+            "canais": [
+                {
+                    "nome": "╭₊ﾟ𓆩🌸﹒𝐂omece﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 0,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩📜﹒𝐑egras﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 1,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩🏷️﹒𝐂argos﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 2,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩💌﹒𝐀presentações﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 3,
+                    "overwrites": []
+                },
+                {
+                    "nome": "╰₊ﾟ𓆩﹒𝐀visos﹒´ˎ˗ †",
+                    "tipo": "text",
+                    "position": 4,
+                    "overwrites": []
+                }
+            ]
+        },
+        {
+            "nome": "⎯⎯⎯⎯⎯⎯⎯⎯（ ✦ ◟ ）’ 𝐏𝐎𝐑𝐓𝐀𝐋　𝐒𝐎𝐂𝐈𝐀𝐋",
+            "position": 1,
+            "overwrites": [],
+            "canais": [
+                {
+                    "nome": "╭₊ﾟ𓆩💭﹒𝐂hat﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 0,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩🌙﹒𝐋ate-night﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 1,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩😂﹒𝐌emes﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 2,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩📸﹒𝐌́𝐝𝐢𝐚﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 3,
+                    "overwrites": []
+                },
+                {
+                    "nome": "╰₊ﾟ𓆩﹒𝐑andom﹒´ˎ˗ †",
+                    "tipo": "text",
+                    "position": 4,
+                    "overwrites": []
+                }
+            ]
+        },
+        {
+            "nome": "⎯⎯⎯⎯⎯⎯⎯⎯（ 🖥️ ◟ ）’ 𝐂𝐎𝐌𝐀𝐍𝐃𝐎𝐒",
+            "position": 2,
+            "overwrites": [],
+            "canais": [
+                {
+                    "nome": "╭₊ﾟ𓆩👾﹒𝐂omandos﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 0,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩🎮﹒𝐌ini-games﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 1,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩📊﹒𝐋evel﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 2,
+                    "overwrites": []
+                },
+                {
+                    "nome": "╰₊ﾟ𓆩﹒𝐁ots﹒´ˎ˗ †",
+                    "tipo": "text",
+                    "position": 3,
+                    "overwrites": []
+                }
+            ]
+        },
+        {
+            "nome": "⎯⎯⎯⎯⎯⎯⎯⎯（ 🎀 ◟ ）’ 𝐂𝐑𝐈𝐀𝐓𝐈𝐕𝐈𝐃𝐀𝐃𝐄",
+            "position": 3,
+            "overwrites": [],
+            "canais": [
+                {
+                    "nome": "╭₊ﾟ𓆩🎨﹒𝐀rtes﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 0,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩✍️﹒𝐄scrita﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 1,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩🎧﹒𝐏laylists﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 2,
+                    "overwrites": []
+                },
+                {
+                    "nome": "╰₊ﾟ𓆩﹒𝐀esthetic﹒´ˎ˗ †",
+                    "tipo": "text",
+                    "position": 3,
+                    "overwrites": []
+                }
+            ]
+        },
+        {
+            "nome": "⎯⎯⎯⎯⎯⎯⎯⎯（ 📀 ◟ ）’ 𝐌𝐄𝐃𝐈𝐀　𝐋𝐎𝐔𝐍𝐆𝐄",
+            "position": 4,
+            "overwrites": [],
+            "canais": [
+                {
+                    "nome": "╭₊ﾟ𓆩🎵﹒𝐌úsica﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 0,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩📺﹒𝐒eries\\Filmes﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 1,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩📢﹒𝐑ecomendações﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 2,
+                    "overwrites": []
+                },
+                {
+                    "nome": "╰₊ﾟ𓆩﹒𝐂lipes﹒´ˎ˗ †",
+                    "tipo": "text",
+                    "position": 3,
+                    "overwrites": []
+                }
+            ]
+        },
+        {
+            "nome": "⎯⎯⎯⎯⎯⎯⎯⎯（ 🌸 ◟ ）’ 𝐅𝐄𝐄𝐃𝐁𝐀𝐂𝐊",
+            "position": 5,
+            "overwrites": [],
+            "canais": [
+                {
+                    "nome": "╭₊ﾟ𓆩📝﹒𝐒ugestões﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 0,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩⚠️﹒𝐑elatórios﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 1,
+                    "overwrites": []
+                },
+                {
+                    "nome": "╰₊ﾟ𓆩﹒𝐏olls﹒´ˎ˗ †",
+                    "tipo": "text",
+                    "position": 2,
+                    "overwrites": []
+                }
+            ]
+        },
+        {
+            "nome": "⎯⎯⎯⎯⎯⎯⎯⎯（ 🔒 ◟ ）’ 𝐒𝐓𝐀𝐅𝐅　𝐎𝐍𝐋𝐘",
+            "position": 6,
+            "overwrites": [],
+            "canais": [
+                {
+                    "nome": "╭₊ﾟ𓆩🛡️﹒𝐌od-Chat﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 0,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩📂﹒𝐋ogs﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 1,
+                    "overwrites": []
+                },
+                {
+                    "nome": "┊₊ﾟ𓆩⚙️﹒𝐂onfigs﹒𓂃˖†",
+                    "tipo": "text",
+                    "position": 2,
+                    "overwrites": []
+                },
+                {
+                    "nome": "╰₊ﾟ𓆩﹒𝐏lanning﹒´ˎ˗ †",
+                    "tipo": "text",
+                    "position": 3,
+                    "overwrites": []
+                }
+            ]
+        },
+        {
+            "nome": "🎙️ Canais de Voz",
+            "position": 7,
+            "overwrites": [],
+            "canais": [
+                {
+                    "nome": "💿 Sala Social",
+                    "tipo": "voice",
+                    "position": 0,
+                    "overwrites": []
+                },
+                {
+                    "nome": "🎀 Chill Room",
+                    "tipo": "voice",
+                    "position": 1,
+                    "overwrites": []
+                },
+                {
+                    "nome": "🎮 Gaming VC",
+                    "tipo": "voice",
+                    "position": 2,
+                    "overwrites": []
+                },
+                {
+                    "nome": "📺 Assistir Juntos",
+                    "tipo": "voice",
+                    "position": 3,
+                    "overwrites": []
+                }
+            ]
+        }
+    ]
+}
