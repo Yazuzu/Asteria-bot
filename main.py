@@ -105,7 +105,11 @@ async def handle_asteria_message(message):
                 # 🧊 MODO DIRETO (Rápido para mensagens curtas)
                 # Mantém a personalidade mas economiza uma chamada de LLM.
                 hints = "[tone: aggressive | escalation: 5/10]" if is_short else ""
-                prompt = f"{ASTERIA_SYSTEM}\n\n{hints}\n\n{context}\n\nUsuário: {user_msg}\nAstéria:"
+                prompt = CASUAL_TEMPLATE.format(
+                    system=f"{ASTERIA_SYSTEM}\n\n{hints}",
+                    memory=context,
+                    mensagem=user_msg
+                )
                 response = await generate(prompt, max_tokens=150 if is_rp else 80)
                 analysis = None
         if response:

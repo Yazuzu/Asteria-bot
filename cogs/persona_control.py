@@ -45,13 +45,12 @@ class PersonaControl(commands.Cog):
     @is_owner()
     async def persona_test(self, ctx, *, mensagem: str):
         """Testa PersonaReAct com uma mensagem direta."""
-        from llm_client_react import generate_with_react
         from prompts import ASTERIA_SYSTEM
         
         async with ctx.typing():
             try:
                 # Simulando contexto vazio para o teste
-                response, analysis = await generate_with_react(
+                response, analysis, _ = await self.bot.persona_engine.analyze_and_respond(
                     user_message=mensagem,
                     conversation_context="[Histórico de teste vazio]",
                     system_prompt=ASTERIA_SYSTEM,

@@ -228,16 +228,21 @@ class PersonaReActEngine:
     ) -> Optional[PersonaReActAnalysis]:
         """FASE 1: Análise (T=0.3)."""
         
-        analysis_prompt = f"""{system_prompt}
-
-[ANÁLISE INTERNA - INVISÍVEL para usuário]
-Contexto: {context}
-Mensagem: "{user_message}"
-
-Responda APENAS com JSON:
-{{"tone": "aggressive|curious|vulnerable", "interlocutor_state": "tilted|stoic|devotee|competitive|philosophical|disinterested", "strategy": "...", "key_points": [], "escalation_suggested": 5}}
-
-JSON:"""
+        template = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{memory}{mensagem}<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
+        
+        system = f"{system_prompt}\n\n[ANÁLISE INTERNA - INVISÍVEL PARA USUÁRIO]"
+        memory = f"Contexto anterior:\n{context}\n\n" if context else ""
+        mensagem = (
+            f"Mensagem do usuário: \"{user_message}\"\n\n"
+            f"Responda APENAS com JSON:\n"
+            f"{{\"tone\": \"aggressive|curious|vulnerable\", \"interlocutor_state\": \"tilted|stoic|devotee|competitive|philosophical|disinterested\", \"strategy\": \"...\", \"key_points\": [], \"escalation_suggested\": 5}}"
+        )
+        
+        analysis_prompt = template.format(
+            system=system,
+            memory=memory,
+            mensagem=mensagem
+        )
         
         try:
             analysis_text = await asyncio.wait_for(
@@ -283,17 +288,16 @@ JSON:"""
     ) -> Optional[str]:
         """FASE 2: Resposta (T=0.9)."""
         
+        template = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{memory}{mensagem}<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
+        
         max_tokens = 300 if is_rp else self.config["response_max_tokens"]
         hints = f"[tone: {analysis.tone} | escalation: {analysis.escalation_suggested}/10]"
         
-        response_prompt = f"""{system_prompt}
-
-{hints}
-
-{context}
-
-Usuário: {user_message}
-Astéria:"""
+        response_prompt = template.format(
+            system=f"{system_prompt}\n\n{hints}",
+            memory=context,
+            mensagem=user_message
+        )
         
         try:
             response = await asyncio.wait_for(

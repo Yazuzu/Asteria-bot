@@ -15,7 +15,11 @@ logger = logging.getLogger("llm")
 DEFAULT_TOP_P = 0.95
 DEFAULT_TOP_K = 40
 DEFAULT_MAX_CONTEXT = 4096
-DEFAULT_STOP = ["<|eot_id|>", "<|start_header_id|>"]
+DEFAULT_STOP = [
+    "<|eot_id|>", "<|start_header_id|>", 
+    "\nUsuário:", "\nUser:", "\nAstéria:", "\nAsteria:",
+    " Usuário:", " User:", " Astéria:", " Asteria:"
+]
 
 async def generate(prompt: str, max_tokens: int = 150, temperature: float = None) -> str:
     """

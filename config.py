@@ -28,7 +28,11 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 TOP_P = 0.95
 TOP_K = 40
 MAX_CONTEXT_LENGTH = 4096
-STOP_TOKENS = ["<|eot_id|>", "<|start_header_id|>"]
+STOP_TOKENS = [
+    "<|eot_id|>", "<|start_header_id|>", 
+    "\nUsuário:", "\nUser:", "\nAstéria:", "\nAsteria:",
+    " Usuário:", " User:", " Astéria:", " Asteria:"
+]
 
 # PersonaReAct
 USE_PERSONA_REACT = True
