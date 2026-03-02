@@ -132,8 +132,8 @@ class PersonaReActEngine:
             "response_temperature": 0.9,
             "analysis_max_tokens": 150,
             "response_max_tokens": 80,
-            "analysis_timeout_sec": 120,
-            "response_timeout_sec": 120,
+            "analysis_timeout_sec": 300,
+            "response_timeout_sec": 300,
             "enable_metrics": True,
             **(config or {})
         }

@@ -57,7 +57,7 @@ async def generate(prompt: str, max_tokens: int = 150, temperature: float = None
             async with session.post(
                 KOBOLD_URL,
                 json=payload,
-                timeout=aiohttp.ClientTimeout(total=180)
+                timeout=aiohttp.ClientTimeout(total=360)
             ) as resp:
                 if resp.status != 200:
                     text = await resp.text()
