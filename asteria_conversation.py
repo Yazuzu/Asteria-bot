@@ -23,11 +23,11 @@ class AsteriaConversation:
         self.personality = PersonalityMatcher()
 
         # Estados da personalidade
-        self.current_state = "aggressive"
+        self.current_state = "casual"
         self.vuln_cooldown = 0
 
-        # Limiar de confiança (ajustável)
-        self.confidence_threshold = 0.5
+        # Limiar de confiança (ajustado para ser mais tolerante)
+        self.confidence_threshold = 0.35
 
     async def process_message(self, user_msg: str, user_id: int, channel_id: int, is_rp: bool = False) -> str:
         """
@@ -142,9 +142,9 @@ class AsteriaConversation:
         return base
 
     def _build_normal_prompt(self, strategy: dict, emotion: EmotionResult) -> str:
-        hints = f"\n\n[HINTS INTERNOS]\n- Estado: {self.current_state}\n- Tom: {strategy['tone']}\n- Escalação: {strategy['escalation']}/10\n- Emoção: {emotion.dominant}\n"
+        hints = f"\n\n[DIRETRIZES DE CONTEXTO]\n- Estado Atual: {self.current_state}\n- Tom Sugerido: {strategy['tone']}\n- Nível de Provocação: {strategy['escalation']}/10\n- Emoção Detectada: {emotion.dominant}\n"
         return ASTERIA_SYSTEM + hints
 
     def _build_low_confidence_prompt(self, strategy: dict, emotion: EmotionResult) -> str:
-        hints = f"\n\n[HINTS INTERNOS - BAIXA CONFIANÇA]\n- Estado: {self.current_state}\n- Tom: {strategy['tone']}\n- Escalação: {strategy['escalation']}/10\n- **AVISO: Pouca memória. Se não souber um fato, admita e provoque (Ex: 'Não sei disso, mas aposto que você também não!'). Nunca invente fatos.**\n"
+        hints = f"\n\n[DIRETRIZES - POUCO CONHECIMENTO]\n- Estado Atual: {self.current_state}\n- Tom Sugerido: {strategy['tone']}\n- Nível de Provocação: {strategy['escalation']}/10\n- **AVISO: Você não tem lembranças claras deste interlocutor ou assunto. Não invente fatos. Seja evasiva, sarcástica ou mude de assunto provocando o usuário.**\n"
         return ASTERIA_SYSTEM + hints

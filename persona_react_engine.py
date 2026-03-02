@@ -24,9 +24,10 @@ logger = logging.getLogger("PersonaReAct")
 
 class AsteriaState(Enum):
     """Estados de personalidade."""
-    AGGRESSIVE = "aggressive"      # 70-80%
-    CURIOUS = "curious"            # 10-15%
-    IMPULSIVE = "impulsive"        # 5-15%
+    CASUAL = "casual"              # Base/Neutro (40-50%)
+    AGGRESSIVE = "aggressive"      # Pico (30-40%)
+    CURIOUS = "curious"            # Estímulo (10-15%)
+    IMPULSIVE = "impulsive"        # Aleatório (5-10%)
 
 
 @dataclass
