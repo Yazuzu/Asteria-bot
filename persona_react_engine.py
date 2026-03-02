@@ -180,11 +180,11 @@ class PersonaReActEngine:
                 logger.warning(f"Análise falhou, usando fallback")
                 analysis = PersonaReActAnalysis(
                     thinking="fallback",
-                    tone="aggressive",
+                    tone="casual",
                     interlocutor_state="unknown",
                     strategy="default",
                     key_points=[],
-                    escalation_suggested=5,
+                    escalation_suggested=3,
                 )
             else:
                 metric.tone = analysis.tone

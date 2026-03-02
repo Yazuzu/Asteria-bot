@@ -50,7 +50,7 @@ class Asteria(commands.Cog):
                         user_id=ctx.author.id
                     )
                 else:
-                    hints = "[tone: aggressive | escalation: 5/10]" if is_short else ""
+                    hints = "[tone: natural | escalation: 1/10]" if is_short else ""
                     prompt = CASUAL_TEMPLATE.format(
                         system=f"{ASTERIA_SYSTEM}\n\n{hints}",
                         memory=context,
