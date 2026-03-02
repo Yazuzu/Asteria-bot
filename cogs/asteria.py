@@ -24,56 +24,31 @@ class Asteria(commands.Cog):
     async def asteria_cmd(self, ctx, *, mensagem: str):
         """Fala diretamente com a Astéria. Ex: !asteria oi"""
         if ctx.author.bot: return
-
         if len(mensagem) > MAX_MESSAGE_LENGTH:
             await ctx.reply(f"❌ Mensagem muito longa!")
             return
-
-        # Contexto do novo sistema
-        context = self.bot.memory_system.get_context(
-            mensagem, user_id=ctx.author.id, channel_id=ctx.channel.id
-        )
 
         is_rp = "*" in mensagem or any(w in mensagem.lower() for w in RP_WORDS)
         
         async with ctx.typing():
             try:
-                is_short = len(mensagem) < 15
-                use_react = getattr(self.bot, "use_persona_react", True) and not is_short
-
-                if use_react:
-                    response, analysis, _ = await self.bot.persona_engine.analyze_and_respond(
-                        user_message=mensagem,
-                        conversation_context=context,
-                        system_prompt=ASTERIA_SYSTEM,
-                        is_rp=is_rp,
-                        user_id=ctx.author.id
-                    )
-                else:
-                    hints = "[tone: natural | escalation: 1/10]" if is_short else ""
-                    prompt = CASUAL_TEMPLATE.format(
-                        system=f"{ASTERIA_SYSTEM}\n\n{hints}",
-                        memory=context,
-                        mensagem=mensagem
-                    )
-                    response = await generate(prompt, max_tokens=RP_MAX_TOKENS if is_rp else CASUAL_MAX_TOKENS)
+                # O AsteriaConversation agora orquestra tudo
+                response = await self.bot.asteria.process_message(
+                    mensagem, 
+                    user_id=ctx.author.id, 
+                    channel_id=ctx.channel.id,
+                    is_rp=is_rp
+                )
 
                 if response:
-                    # Remove possíveis tokens residuais e prefixos de turno (fail-safe)
-                    response = response.split("<|")[0].strip()
+                    # Fail-safe para limpar prefixos de turno
                     for prefix in ["Astéria:", "Asteria:", "User:", "Usuário:"]:
-                        if response.startswith(prefix):
-                            response = response[len(prefix):].strip()
+                        if response.startswith(prefix): response = response[len(prefix):].strip()
                             
                     await ctx.reply(response)
                     
-                    # Salva em ambos os sistemas para compatibilidade
+                    # Atualiza legado
                     self.bot.memory_manager.get(ctx.channel.id).add(mensagem, response)
-                    self.bot.memory_system.add_interaction(
-                        mensagem, response, 
-                        user_id=ctx.author.id, 
-                        channel_id=ctx.channel.id
-                    )
                 else:
                     await ctx.reply("🤖 Sem resposta do modelo.")
             except Exception:
@@ -82,29 +57,24 @@ class Asteria(commands.Cog):
 
     @commands.command(name="limpar_memoria", aliases=["clearmem", "resetar"])
     async def limpar_memoria(self, ctx):
-        """Limpa o histórico de conversa de todos os sistemas (Legado + LanceDB)."""
-        # Limpa legado
+        """Limpa todo o histórico (Legado + LanceDB + Densidade) do canal."""
         self.bot.memory_manager.clear(ctx.channel.id)
-        
-        # Limpa sistema avançado (Densidade + Curto Prazo + LanceDB)
-        self.bot.memory_system.clear_channel_memory(ctx.channel.id)
-            
+        self.bot.memory_service.clear_channel_memory(ctx.channel.id)
         await ctx.send("🧹 Memória absoluta e irreversível do canal apagada.")
 
     @commands.command(name="historico", aliases=["memory"])
     async def historico(self, ctx):
-        """Mostra o histórico de conversa do canal (Novo Sistema)."""
-        context = self.bot.memory_system.get_context(
+        """Mostra o histórico de conversa do canal (Contexto Atual)."""
+        context = self.bot.memory_service.get_context(
             "resumo", user_id=ctx.author.id, channel_id=ctx.channel.id
         )
         if not context or context.isspace():
             return await ctx.send("📭 Nenhum histórico no momento.")
 
-        if len(context) > 3900:
-            context = context[:3900] + "..."
+        if len(context) > 3900: context = context[:3900] + "..."
             
         embed = nextcord.Embed(
-            title="📋 Histórico Avançado (Contexto)",
+            title="📋 Histórico / Contexto Recuperado",
             description=f"```{context}```",
             color=0xB388FF,
         )

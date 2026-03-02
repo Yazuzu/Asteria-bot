@@ -7,8 +7,9 @@ from config import DISCORD_TOKEN, OWNER_IDS
 from memory import MemoryManager
 from llm_client import generate
 from prompts import ASTERIA_SYSTEM, CASUAL_TEMPLATE, RP_TEMPLATE
-from memory_system import MemorySystem
+from memory_system import MemoryService
 from persona_react_engine import PersonaReActEngine
+from asteria_conversation import AsteriaConversation
 from config import USE_PERSONA_REACT
 
 # ── Logging ────────────────────────────────────────────────────────────────────
@@ -29,8 +30,9 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 bot.memory_manager = MemoryManager()
-bot.memory_system = MemorySystem()
+bot.memory_service = MemoryService()
 bot.persona_engine = PersonaReActEngine(generate)
+bot.asteria = AsteriaConversation(bot.memory_service, bot.persona_engine)
 bot.use_persona_react = USE_PERSONA_REACT
 
 # ── Events ─────────────────────────────────────────────────────────────────────
@@ -66,68 +68,32 @@ async def on_message(message):
 
 # ── LLM handler ────────────────────────────────────────────────────────────────
 async def handle_asteria_message(message):
-    mem_legacy = bot.memory_manager.get(message.channel.id)
     user_msg = message.clean_content.strip()
-
-    if not user_msg:
-        return
+    if not user_msg: return
 
     # Detecção simples de RP
-    is_rp = "*" in user_msg or any(
-        word in user_msg.lower()
-        for word in ["ação", "faz", "olha", "beija", "abraça", "toca", "segura"]
-    )
-
-    # Novo sistema de contexto (Density Matrix)
-    context = bot.memory_system.get_context(
-        user_msg, 
-        user_id=message.author.id, 
-        channel_id=message.channel.id
-    )
+    is_rp = "*" in user_msg or any(w in user_msg.lower() for w in ["ação", "faz", "olha", "beija", "abraça", "toca", "segura"])
 
     try:
         async with message.channel.typing():
-            # Decisão: Usar PersonaReAct completo ou modo "Lite" (rápido)?
-            is_short = len(user_msg) < 15
-            use_react = getattr(bot, "use_persona_react", True) and not is_short
+            # O AsteriaConversation agora orquestra memória, personalidade e bypass
+            response = await bot.asteria.process_message(
+                user_msg, 
+                user_id=message.author.id, 
+                channel_id=message.channel.id,
+                is_rp=is_rp
+            )
 
-            if use_react:
-                # 🎭 PERSONA REACT COMPLETO (Análise + Resposta)
-                # O motor já tem timeouts longos (300s), mas em hardware local leva tempo.
-                response, analysis, _ = await bot.persona_engine.analyze_and_respond(
-                    user_message=user_msg,
-                    conversation_context=context,
-                    system_prompt=ASTERIA_SYSTEM,
-                    is_rp=is_rp,
-                    user_id=message.author.id
-                )
-            else:
-                # 🧊 MODO DIRETO (Rápido para mensagens curtas)
-                # Mantém a personalidade mas economiza uma chamada de LLM.
-                hints = "[tone: natural | escalation: 1/10]" if is_short else ""
-                prompt = CASUAL_TEMPLATE.format(
-                    system=f"{ASTERIA_SYSTEM}\n\n{hints}",
-                    memory=context,
-                    mensagem=user_msg
-                )
-                response = await generate(prompt, max_tokens=150 if is_rp else 80)
-                analysis = None
         if response:
-            # Remove possíveis tokens residuais e prefixos de turno (fail-safe)
-            response = response.split("<|")[0].strip()
+            # Fail-safe para limpar prefixos de turno na resposta final
             for prefix in ["Astéria:", "Asteria:", "User:", "Usuário:"]:
-                if response.startswith(prefix):
-                    response = response[len(prefix):].strip()
+                if response.startswith(prefix): response = response[len(prefix):].strip()
             
             await message.channel.send(response)
             
-            # Atualiza memórias
+            # Atualiza memória legada (para compatibilidade temporária)
+            mem_legacy = bot.memory_manager.get(message.channel.id)
             mem_legacy.add(user_msg, response)
-            bot.memory_system.add_interaction(
-                user_msg, response, 
-                user_id=message.author.id, 
-                channel_id=message.channel.id
-            )
         else:
             await message.channel.send("[Sem resposta do modelo]")
     except Exception:
