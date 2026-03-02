@@ -20,84 +20,90 @@ class Asteria(commands.Cog):
         self.bot = bot
 
     @commands.command(name="asteria", aliases=["a"])
-    @commands.cooldown(1, 5, commands.BucketType.user)  # 1 uso a cada 5s por usuário
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def asteria_cmd(self, ctx, *, mensagem: str):
         """Fala diretamente com a Astéria. Ex: !asteria oi"""
+        if ctx.author.bot: return
 
-        # 1. Ignorar bots (segurança extra)
-        if ctx.author.bot:
-            return
-
-        # 2. Validar tamanho da mensagem
         if len(mensagem) > MAX_MESSAGE_LENGTH:
-            await ctx.reply(f"❌ Mensagem muito longa! Limite de {MAX_MESSAGE_LENGTH} caracteres.")
+            await ctx.reply(f"❌ Mensagem muito longa!")
             return
 
-        # 3. Obter memória do canal
-        mem = self.bot.memory_manager.get(ctx.channel.id)
-
-        # 4. Detectar se é roleplay
-        is_rp = "*" in mensagem or any(w in mensagem.lower() for w in RP_WORDS)
-        template = RP_TEMPLATE if is_rp else CASUAL_TEMPLATE
-        max_tokens = RP_MAX_TOKENS if is_rp else CASUAL_MAX_TOKENS
-
-        # 5. Montar prompt
-        prompt = template.format(
-            system=ASTERIA_SYSTEM,
-            memory=mem.get_context(),
-            mensagem=mensagem
+        # Contexto do novo sistema
+        context = self.bot.memory_system.get_context(
+            mensagem, user_id=ctx.author.id, channel_id=ctx.channel.id
         )
 
-        # 6. Log da requisição (modo debug)
-        logger.debug(f"Prompt para {ctx.author} (ID: {ctx.author.id}): {prompt[:200]}...")
-
-        # 7. Indicar digitação e chamar o LLM
+        is_rp = "*" in mensagem or any(w in mensagem.lower() for w in RP_WORDS)
+        
         async with ctx.typing():
             try:
-                response = await generate(prompt, max_tokens=max_tokens)
-            except Exception as e:
-                logger.exception("Erro ao gerar resposta")
-                await ctx.reply("❌ Erro interno ao processar sua mensagem. Tente novamente mais tarde.")
-                return
+                is_short = len(mensagem) < 15
+                use_react = getattr(self.bot, "use_persona_react", True) and not is_short
 
-        # 8. Validar resposta
-        if not response or response.isspace():
-            await ctx.reply("🤖 O modelo não retornou nenhuma resposta. Talvez esteja ocupado.")
-            return
+                if use_react:
+                    response, analysis, _ = await self.bot.persona_engine.analyze_and_respond(
+                        user_message=mensagem,
+                        conversation_context=context,
+                        system_prompt=ASTERIA_SYSTEM,
+                        is_rp=is_rp,
+                        user_id=ctx.author.id
+                    )
+                else:
+                    hints = "[tone: aggressive | escalation: 5/10]" if is_short else ""
+                    prompt = CASUAL_TEMPLATE.format(
+                        system=f"{ASTERIA_SYSTEM}\n\n{hints}",
+                        memory=context,
+                        mensagem=mensagem
+                    )
+                    response = await generate(prompt, max_tokens=RP_MAX_TOKENS if is_rp else CASUAL_MAX_TOKENS)
 
-        # 9. Responder e salvar memória (respondendo UMA vez só)
-        await ctx.reply(response)
-        mem.add(mensagem, response)
-
-    @asteria_cmd.error
-    async def asteria_error(self, ctx, error):
-        """Tratamento de erros específicos do comando."""
-        if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("❌ Me diga algo. Ex: `!asteria oi Astéria`")
-        elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.reply(f"⏳ Calma aí! Espere {error.retry_after:.1f}s para falar de novo.")
-        else:
-            logger.error(f"Erro inesperado no comando asteria: {error}", exc_info=True)
-            await ctx.reply("❌ Ocorreu um erro inesperado. Verifique os logs do bot.")
+                if response:
+                    response = response.split("<|")[0].strip()
+                    await ctx.reply(response)
+                    
+                    # Salva em ambos os sistemas para compatibilidade
+                    self.bot.memory_manager.get(ctx.channel.id).add(mensagem, response)
+                    self.bot.memory_system.add_interaction(
+                        mensagem, response, 
+                        user_id=ctx.author.id, 
+                        channel_id=ctx.channel.id
+                    )
+                else:
+                    await ctx.reply("🤖 Sem resposta do modelo.")
+            except Exception:
+                logger.exception("Erro no asteria_cmd")
+                await ctx.reply("❌ Erro interno.")
 
     @commands.command(name="limpar_memoria", aliases=["clearmem", "resetar"])
     async def limpar_memoria(self, ctx):
-        """Limpa o histórico de conversa do canal atual."""
+        """Limpa o histórico de conversa de ambos os sistemas."""
+        # Limpa legado
         self.bot.memory_manager.clear(ctx.channel.id)
-        await ctx.send("🧹 Memória do canal apagada.")
+        
+        # Limpa novo sistema (apenas o estado de densidade e curto prazo do canal)
+        cid = str(ctx.channel.id)
+        if cid in self.bot.memory_system.density_states:
+            del self.bot.memory_system.density_states[cid]
+        if cid in self.bot.memory_system.short_term:
+            del self.bot.memory_system.short_term[cid]
+            
+        await ctx.send("🧹 Memória completa do canal (Legada + Avançada) apagada.")
 
     @commands.command(name="historico", aliases=["memory"])
     async def historico(self, ctx):
-        """Mostra o histórico de conversa do canal."""
-        mem = self.bot.memory_manager.get(ctx.channel.id)
-        context = mem.get_context()
-        if not context:
+        """Mostra o histórico de conversa do canal (Novo Sistema)."""
+        context = self.bot.memory_system.get_context(
+            "resumo", user_id=ctx.author.id, channel_id=ctx.channel.id
+        )
+        if not context or context.isspace():
             return await ctx.send("📭 Nenhum histórico no momento.")
-        # Limitar tamanho do embed
+
         if len(context) > 3900:
             context = context[:3900] + "..."
+            
         embed = nextcord.Embed(
-            title="📋 Histórico do Canal",
+            title="📋 Histórico Avançado (Contexto)",
             description=f"```{context}```",
             color=0xB388FF,
         )
