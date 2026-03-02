@@ -285,7 +285,8 @@ class MemorySystem:
         self.lance_store = LanceDBStore(self.config, self.embedder)
         self.emotion_detector = EmotionDetector(self.config)
         self.density_states: Dict[str, DensityMemoryState] = {}
-        self._l1 = deque(maxlen=self.config.l1_maxlen)
+        # Histórico de curto prazo por canal
+        self.short_term: Dict[str, Deque[Dict]] = {}
 
     def add_interaction(self, user_msg, bot_msg, user_id, channel_id, metadata=None):
         emo = self.emotion_detector.detect(user_msg)
@@ -296,9 +297,12 @@ class MemorySystem:
         if cid not in self.density_states:
             self.density_states[cid] = DensityMemoryState(self.embedder.dimension + 3)
         
+        if cid not in self.short_term:
+            self.short_term[cid] = deque(maxlen=self.config.l1_maxlen)
+        
         full_vec = np.concatenate([sem_vec, emo.vad])
         self.density_states[cid].add_vector(full_vec)
-        self._l1.append({"user": user_msg, "bot": bot_msg, "emo": emo.dominant})
+        self.short_term[cid].append({"user": user_msg, "bot": bot_msg, "emo": emo.dominant})
 
     def get_context(self, query, user_id=None, channel_id=None, limit=5):
         q_sem = self.embedder.encode(query)
@@ -312,9 +316,18 @@ class MemorySystem:
                 m["score"] = self.density_states[cid].score(fv)
             mems.sort(key=lambda x: x.get("score", 0), reverse=True)
             
-        ctx = "[Memórias]\n" + "\n".join(f"- {m['text']}" for m in mems)
-        ctx += "\n\n[Recente]\n" + "\n".join(f"U: {h['user']}\nA: {h['bot']}" for h in list(self._l1)[-3:])
-        return ctx
+        mems_str = ""
+        if mems:
+            mems_str = "[Memorias Relacionadas]\n" + "\n".join(f"- {m['text']}" for m in mems) + "\n\n"
+        
+        recent_str = ""
+        if cid in self.short_term and self.short_term[cid]:
+            recent_str = "[Conversa Recente]\n" + "\n".join(
+                f"Usuário: {h['user']}\nAstéria: {h['bot']}" 
+                for h in list(self.short_term[cid])[-3:]
+            ) + "\n\n"
+            
+        return f"{mems_str}{recent_str}"
 
     def close(self):
         pass
