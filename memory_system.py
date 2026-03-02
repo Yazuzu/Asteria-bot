@@ -272,11 +272,20 @@ class LanceDBStore:
         self.table.add(data)
 
     def search(self, vec, user_id, channel_id, limit):
-        res = self.table.search(vec.tolist(), vector_column_name="vector").limit(limit).to_list()
+        """Busca vetorial filtrada por canal."""
+        where_clause = f"channel_id = '{channel_id}'"
+        res = self.table.search(vec.tolist(), vector_column_name="vector") \
+            .where(where_clause, prefilter=True) \
+            .limit(limit).to_list()
         for r in res:
             r["vector"] = np.array(r["vector"])
             r["emotion_vad"] = np.array(r["emotion_vad"])
         return res
+
+    def delete_channel_memories(self, channel_id):
+        """Remove fisicamente as memórias de um canal no LanceDB."""
+        where_clause = f"channel_id = '{channel_id}'"
+        self.table.delete(where_clause)
 
 class MemorySystem:
     def __init__(self, config=None):
