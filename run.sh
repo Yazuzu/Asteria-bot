@@ -46,7 +46,7 @@ else
             --contextsize 4096 \
             --threads 8 \
             --usevulkan 0 \
-            --gpulayers 20 \
+            --gpulayers 35 \
             --quiet \
             > "$KOBOLD_LOG" 2>&1 &
 

@@ -87,8 +87,13 @@ async def handle_asteria_message(message):
 
     try:
         async with message.channel.typing():
-            if getattr(bot, "use_persona_react", True):
-                # 🎭 PERSONA REACT ENGINE (Análise + Resposta)
+            # Decisão: Usar PersonaReAct completo ou modo "Lite" (rápido)?
+            is_short = len(user_msg) < 15
+            use_react = getattr(bot, "use_persona_react", True) and not is_short
+
+            if use_react:
+                # 🎭 PERSONA REACT COMPLETO (Análise + Resposta)
+                # O motor já tem timeouts longos (300s), mas em hardware local leva tempo.
                 response, analysis, _ = await bot.persona_engine.analyze_and_respond(
                     user_message=user_msg,
                     conversation_context=context,
@@ -97,16 +102,12 @@ async def handle_asteria_message(message):
                     user_id=message.author.id
                 )
             else:
-                # 🧊 MODO LEGADO (Direto)
-                template = RP_TEMPLATE if is_rp else CASUAL_TEMPLATE
-                max_tokens = 300 if is_rp else 80
-                prompt = template.format(
-                    system=ASTERIA_SYSTEM,
-                    memory=mem_legacy.get_context(),
-                    mensagem=user_msg,
-                )
-                response = await generate(prompt, max_tokens=max_tokens)
-
+                # 🧊 MODO DIRETO (Rápido para mensagens curtas)
+                # Mantém a personalidade mas economiza uma chamada de LLM.
+                hints = "[tone: aggressive | escalation: 5/10]" if is_short else ""
+                prompt = f"{ASTERIA_SYSTEM}\n\n{hints}\n\n{context}\n\nUsuário: {user_msg}\nAstéria:"
+                response = await generate(prompt, max_tokens=150 if is_rp else 80)
+                analysis = None
         if response:
             # Remove possíveis tokens residuais
             response = response.split("<|")[0].strip()
