@@ -329,5 +329,15 @@ class MemorySystem:
             
         return f"{mems_str}{recent_str}"
 
+    def clear_channel_memory(self, channel_id):
+        """Limpa todo o histórico (persistente e volátil) de um canal."""
+        cid = str(channel_id)
+        if cid in self.density_states:
+            del self.density_states[cid]
+        if cid in self.short_term:
+            del self.short_term[cid]
+        
+        self.lance_store.delete_channel_memories(cid)
+
     def close(self):
         pass

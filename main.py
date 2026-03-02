@@ -113,8 +113,12 @@ async def handle_asteria_message(message):
                 response = await generate(prompt, max_tokens=150 if is_rp else 80)
                 analysis = None
         if response:
-            # Remove possíveis tokens residuais
+            # Remove possíveis tokens residuais e prefixos de turno (fail-safe)
             response = response.split("<|")[0].strip()
+            for prefix in ["Astéria:", "Asteria:", "User:", "Usuário:"]:
+                if response.startswith(prefix):
+                    response = response[len(prefix):].strip()
+            
             await message.channel.send(response)
             
             # Atualiza memórias

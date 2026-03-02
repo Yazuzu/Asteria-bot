@@ -59,7 +59,12 @@ class Asteria(commands.Cog):
                     response = await generate(prompt, max_tokens=RP_MAX_TOKENS if is_rp else CASUAL_MAX_TOKENS)
 
                 if response:
+                    # Remove possíveis tokens residuais e prefixos de turno (fail-safe)
                     response = response.split("<|")[0].strip()
+                    for prefix in ["Astéria:", "Asteria:", "User:", "Usuário:"]:
+                        if response.startswith(prefix):
+                            response = response[len(prefix):].strip()
+                            
                     await ctx.reply(response)
                     
                     # Salva em ambos os sistemas para compatibilidade
@@ -77,18 +82,14 @@ class Asteria(commands.Cog):
 
     @commands.command(name="limpar_memoria", aliases=["clearmem", "resetar"])
     async def limpar_memoria(self, ctx):
-        """Limpa o histórico de conversa de ambos os sistemas."""
+        """Limpa o histórico de conversa de todos os sistemas (Legado + LanceDB)."""
         # Limpa legado
         self.bot.memory_manager.clear(ctx.channel.id)
         
-        # Limpa novo sistema (apenas o estado de densidade e curto prazo do canal)
-        cid = str(ctx.channel.id)
-        if cid in self.bot.memory_system.density_states:
-            del self.bot.memory_system.density_states[cid]
-        if cid in self.bot.memory_system.short_term:
-            del self.bot.memory_system.short_term[cid]
+        # Limpa sistema avançado (Densidade + Curto Prazo + LanceDB)
+        self.bot.memory_system.clear_channel_memory(ctx.channel.id)
             
-        await ctx.send("🧹 Memória completa do canal (Legada + Avançada) apagada.")
+        await ctx.send("🧹 Memória absoluta e irreversível do canal apagada.")
 
     @commands.command(name="historico", aliases=["memory"])
     async def historico(self, ctx):

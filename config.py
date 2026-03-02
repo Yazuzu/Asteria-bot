@@ -12,7 +12,7 @@ KOBOLD_URL = os.getenv("KOBOLD_URL", "http://localhost:5001/api/v1/generate")
 # Limites de geração
 CASUAL_MAX_TOKENS = 80
 RP_MAX_TOKENS = 300
-TEMPERATURE = 0.85
+TEMPERATURE = 0.70
 REPETITION_PENALTY = 1.15
 
 # Memória
@@ -31,7 +31,8 @@ MAX_CONTEXT_LENGTH = 4096
 STOP_TOKENS = [
     "<|eot_id|>", "<|start_header_id|>", 
     "\nUsuário:", "\nUser:", "\nAstéria:", "\nAsteria:",
-    " Usuário:", " User:", " Astéria:", " Asteria:"
+    "Usuário:", "User:", "Astéria:", "Asteria:",
+    "###"
 ]
 
 # PersonaReAct
