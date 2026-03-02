@@ -17,7 +17,7 @@ DEFAULT_TOP_K = 40
 DEFAULT_MAX_CONTEXT = 4096
 DEFAULT_STOP = ["<|eot_id|>", "<|start_header_id|>"]
 
-async def generate(prompt: str, max_tokens: int = 150) -> str:
+async def generate(prompt: str, max_tokens: int = 150, temperature: float = None) -> str:
     """
     Envia o prompt para o KoboldCPP e retorna a resposta gerada.
     max_tokens: limite de tokens na resposta (deve vir do main.py: 80 ou 300).
@@ -45,7 +45,7 @@ async def generate(prompt: str, max_tokens: int = 150) -> str:
         "prompt": prompt,
         "max_context_length": max_context,
         "max_length": max_tokens,
-        "temperature": TEMPERATURE,                # vindo do config
+        "temperature": temperature if temperature is not None else TEMPERATURE,
         "top_p": top_p,
         "top_k": top_k,
         "repeat_penalty": REPETITION_PENALTY,      # vindo do config (nome correto!)
@@ -57,7 +57,7 @@ async def generate(prompt: str, max_tokens: int = 150) -> str:
             async with session.post(
                 KOBOLD_URL,
                 json=payload,
-                timeout=aiohttp.ClientTimeout(total=90)
+                timeout=aiohttp.ClientTimeout(total=180)
             ) as resp:
                 if resp.status != 200:
                     text = await resp.text()

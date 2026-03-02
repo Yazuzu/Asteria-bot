@@ -7,6 +7,9 @@ from config import DISCORD_TOKEN, OWNER_IDS
 from memory import MemoryManager
 from llm_client import generate
 from prompts import ASTERIA_SYSTEM, CASUAL_TEMPLATE, RP_TEMPLATE
+from memory_system import MemorySystem
+from persona_react_engine import PersonaReActEngine
+from config import USE_PERSONA_REACT
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 handler = logging.handlers.RotatingFileHandler(
@@ -26,6 +29,9 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 bot.memory_manager = MemoryManager()
+bot.memory_system = MemorySystem()
+bot.persona_engine = PersonaReActEngine(generate)
+bot.use_persona_react = USE_PERSONA_REACT
 
 # ── Events ─────────────────────────────────────────────────────────────────────
 @bot.event
@@ -60,7 +66,7 @@ async def on_message(message):
 
 # ── LLM handler ────────────────────────────────────────────────────────────────
 async def handle_asteria_message(message):
-    mem = bot.memory_manager.get(message.channel.id)
+    mem_legacy = bot.memory_manager.get(message.channel.id)
     user_msg = message.clean_content.strip()
 
     if not user_msg:
@@ -72,36 +78,47 @@ async def handle_asteria_message(message):
         for word in ["ação", "faz", "olha", "beija", "abraça", "toca", "segura"]
     )
 
-    template = RP_TEMPLATE if is_rp else CASUAL_TEMPLATE
-    max_tokens = 300 if is_rp else 80
-
-    # Obtém o histórico e limita a um tamanho razoável (últimas 6 trocas)
-    full_history = mem.get_context()
-    history_lines = full_history.splitlines()
-    if len(history_lines) > 12:  # 6 trocas (cada troca tem 2 linhas)
-        history_lines = history_lines[-12:]
-    limited_history = "\n".join(history_lines) + ("\n" if history_lines else "")
-
-    # Monta o prompt com as chaves corretas
-    prompt = template.format(
-        system=ASTERIA_SYSTEM,
-        memory=limited_history,
-        mensagem=user_msg,          # chave 'mensagem' (como definido no template)
+    # Novo sistema de contexto (Density Matrix)
+    context = bot.memory_system.get_context(
+        user_msg, 
+        user_id=message.author.id, 
+        channel_id=message.channel.id
     )
-
-    # Log do prompt para depuração
-    logger.info(f"🔍 Prompt enviado ao LLM (primeiros 500 caracteres): {prompt[:500]}...")
 
     try:
         async with message.channel.typing():
-            response = await generate(prompt, max_tokens=max_tokens)
+            if getattr(bot, "use_persona_react", True):
+                # 🎭 PERSONA REACT ENGINE (Análise + Resposta)
+                response, analysis, _ = await bot.persona_engine.analyze_and_respond(
+                    user_message=user_msg,
+                    conversation_context=context,
+                    system_prompt=ASTERIA_SYSTEM,
+                    is_rp=is_rp,
+                    user_id=message.author.id
+                )
+            else:
+                # 🧊 MODO LEGADO (Direto)
+                template = RP_TEMPLATE if is_rp else CASUAL_TEMPLATE
+                max_tokens = 300 if is_rp else 80
+                prompt = template.format(
+                    system=ASTERIA_SYSTEM,
+                    memory=mem_legacy.get_context(),
+                    mensagem=user_msg,
+                )
+                response = await generate(prompt, max_tokens=max_tokens)
 
         if response:
             # Remove possíveis tokens residuais
             response = response.split("<|")[0].strip()
             await message.channel.send(response)
-            # Adiciona ao histórico (sem passar o channel_id)
-            mem.add(user_msg, response)
+            
+            # Atualiza memórias
+            mem_legacy.add(user_msg, response)
+            bot.memory_system.add_interaction(
+                user_msg, response, 
+                user_id=message.author.id, 
+                channel_id=message.channel.id
+            )
         else:
             await message.channel.send("[Sem resposta do modelo]")
     except Exception:
@@ -110,7 +127,7 @@ async def handle_asteria_message(message):
 
 # ── Cog loader ─────────────────────────────────────────────────────────────────
 async def load_cogs():
-    for cog in ["moderation", "fun", "utility", "owner", "asteria", "template"]:
+    for cog in ["moderation", "fun", "utility", "owner", "asteria", "template", "persona_control"]:
         try:
             bot.load_extension(f"cogs.{cog}")
             logger.info(f"✅ Cog carregado: {cog}")

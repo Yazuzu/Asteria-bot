@@ -210,18 +210,6 @@ class Fun(commands.Cog):
         ]
         await ctx.send(f"😂 {random.choice(jokes)}")
 
-    # Exemplo de comando extra (avatar)
-    @commands.command(name="avatar")
-    @commands.cooldown(1, 5, user_cooldown_key)
-    async def avatar(self, ctx, member: Optional[nextcord.Member] = None):
-        """Mostra o avatar de um membro."""
-        target = member or ctx.author
-        embed = nextcord.Embed(
-            title=f"Avatar de {target.display_name}",
-            color=target.color,
-        )
-        embed.set_image(url=target.display_avatar.url)
-        await ctx.send(embed=embed)
 
     # ==================== TRATAMENTO DE ERROS GLOBAL ====================
 

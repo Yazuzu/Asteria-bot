@@ -1,3 +1,11 @@
 nextcord
 python-dotenv
 aiohttp
+numpy
+lancedb
+pyarrow
+sqlite-vec
+sentence-transformers
+mem0ai
+transformers
+torch
