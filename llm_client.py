@@ -1,81 +1,146 @@
-# llm_client.py
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+llm_client.py — Cliente para KoboldCPP com tratamento de erros robusto
+REFATORADO COM VALIDAÇÕES E FALLBACKS
+"""
+
 import aiohttp
 import asyncio
 import logging
+from typing import Optional
 from config import (
     KOBOLD_URL,
     TEMPERATURE,
     REPETITION_PENALTY,
-    # Opcionais – se não existirem no config, usamos valores padrão abaixo
+    TOP_P,
+    TOP_K,
+    MAX_CONTEXT_LENGTH,
+    STOP_TOKENS,
 )
 
-logger = logging.getLogger("llm")
+logger = logging.getLogger("asteria.llm")
 
-# Valores padrão para parâmetros não definidos no config
-DEFAULT_TOP_P = 0.95
-DEFAULT_TOP_K = 40
-DEFAULT_MAX_CONTEXT = 4096
-DEFAULT_STOP = [
-    "<|eot_id|>", "<|start_header_id|>", 
-    "\nUsuário:", "\nUser:", "\nAstéria:", "\nAsteria:",
-    " Usuário:", " User:", " Astéria:", " Asteria:"
-]
 
-async def generate(prompt: str, max_tokens: int = 150, temperature: float = None) -> str:
+class LLMClientError(Exception):
+    """Erro base do cliente LLM."""
+    pass
+
+
+class LLMConnectionError(LLMClientError):
+    """Erro de conexão com KoboldCPP."""
+    pass
+
+
+class LLMTimeoutError(LLMClientError):
+    """Timeout na geração."""
+    pass
+
+
+class LLMResponseError(LLMClientError):
+    """Erro na resposta do servidor."""
+    pass
+
+
+async def generate(
+    prompt: str,
+    max_tokens: int = 150,
+    temperature: Optional[float] = None,
+    top_p: Optional[float] = None,
+    top_k: Optional[int] = None,
+    repeat_penalty: Optional[float] = None,
+) -> str:
     """
     Envia o prompt para o KoboldCPP e retorna a resposta gerada.
-    max_tokens: limite de tokens na resposta (deve vir do main.py: 80 ou 300).
+
+    Args:
+        prompt: Prompt a enviar
+        max_tokens: Limite de tokens na resposta
+        temperature: Criatividade (0-2)
+        top_p: Nucleus sampling (0-1)
+        top_k: Top-k sampling
+        repeat_penalty: Penalidade de repetição
+
+    Returns:
+        str: Resposta gerada ou mensagem de erro
+
+    Raises:
+        LLMClientError: Se falhar na geração
     """
-    # Tenta importar valores do config, se existirem; senão, usa defaults
-    try:
-        from config import TOP_P, TOP_K, MAX_CONTEXT_LENGTH, STOP_TOKENS
-        top_p = TOP_P
-        top_k = TOP_K
-        max_context = MAX_CONTEXT_LENGTH
-        stop = STOP_TOKENS
-    except ImportError:
-        top_p = DEFAULT_TOP_P
-        top_k = DEFAULT_TOP_K
-        max_context = DEFAULT_MAX_CONTEXT
-        stop = DEFAULT_STOP
-    except AttributeError:
-        # Caso as variáveis não estejam definidas no config
-        top_p = DEFAULT_TOP_P
-        top_k = DEFAULT_TOP_K
-        max_context = DEFAULT_MAX_CONTEXT
-        stop = DEFAULT_STOP
+    # Use config defaults se não fornecido
+    _temperature = temperature if temperature is not None else TEMPERATURE
+    _top_p = top_p if top_p is not None else TOP_P
+    _top_k = top_k if top_k is not None else TOP_K
+    _repeat_penalty = repeat_penalty if repeat_penalty is not None else REPETITION_PENALTY
+
+    # Validação de entrada
+    if not prompt or not isinstance(prompt, str):
+        logger.error(f"Prompt inválido: {type(prompt)}")
+        return "[Erro: prompt inválido]"
+
+    if max_tokens <= 0 or max_tokens > 2048:
+        logger.warning(f"max_tokens fora do range: {max_tokens}, ajustando para 150")
+        max_tokens = 150
 
     payload = {
         "prompt": prompt,
-        "max_context_length": max_context,
+        "max_context_length": MAX_CONTEXT_LENGTH,
         "max_length": max_tokens,
-        "temperature": temperature if temperature is not None else TEMPERATURE,
-        "top_p": top_p,
-        "top_k": top_k,
-        "repeat_penalty": REPETITION_PENALTY,      # vindo do config (nome correto!)
-        "stop": stop,
+        "temperature": _temperature,
+        "top_p": _top_p,
+        "top_k": _top_k,
+        "repeat_penalty": _repeat_penalty,
+        "stop": STOP_TOKENS,
     }
 
     try:
+        logger.debug(f"Enviando request para {KOBOLD_URL}")
+
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 KOBOLD_URL,
                 json=payload,
-                timeout=aiohttp.ClientTimeout(total=360)
+                timeout=aiohttp.ClientTimeout(total=360),
             ) as resp:
+                # Verificar status HTTP
                 if resp.status != 200:
                     text = await resp.text()
-                    logger.error(f"LLM HTTP {resp.status}: {text}")
-                    return "[Erro ao falar com o modelo]"
-                data = await resp.json()
-                if "results" in data and len(data["results"]) > 0:
-                    return data["results"][0]["text"].strip()
-                else:
-                    logger.error(f"Resposta inesperada do KoboldCPP: {data}")
-                    return "[Erro: formato de resposta inválido]"
+                    logger.error(f"LLM HTTP {resp.status}: {text[:200]}")
+                    raise LLMResponseError(f"HTTP {resp.status}: {text}")
+
+                # Parsear JSON
+                try:
+                    data = await resp.json()
+                except aiohttp.ContentTypeError as e:
+                    logger.error(f"Resposta não-JSON do KoboldCPP: {e}")
+                    raise LLMResponseError(f"Resposta inválida: {e}")
+
+                # Verificar estrutura
+                if "results" not in data or not data["results"]:
+                    logger.error(f"Resposta inesperada: {data}")
+                    raise LLMResponseError(f"Sem 'results' na resposta")
+
+                result = data["results"][0].get("text", "").strip()
+
+                if not result:
+                    logger.warning("Resposta vazia do modelo")
+                    return "[Astéria ficou sem palavras...]"
+
+                logger.debug(f"Resposta gerada: {len(result)} chars")
+                return result
+
     except asyncio.TimeoutError:
-        logger.error("Timeout na requisição ao KoboldCPP")
-        return "[Erro: tempo limite excedido]"
+        logger.error("Timeout na requisição ao KoboldCPP (360s)")
+        raise LLMTimeoutError("Tempo limite excedido")
+
+    except aiohttp.ClientConnectorError as e:
+        logger.error(f"Erro de conexão: {e}")
+        raise LLMConnectionError(f"Impossível conectar a {KOBOLD_URL}: {e}")
+
+    except aiohttp.ClientError as e:
+        logger.error(f"Erro do cliente: {e}")
+        raise LLMClientError(f"Erro na requisição: {e}")
+
     except Exception as e:
-        logger.exception("Erro no LLM")
-        return "[Erro interno]"
+        logger.exception(f"Erro inesperado no LLM")
+        raise LLMClientError(f"Erro inesperado: {e}")
